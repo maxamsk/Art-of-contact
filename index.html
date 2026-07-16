@@ -99,10 +99,10 @@
   <div class="filters-wrap">
     <div class="shell">
       <div class="filters" aria-label="Категории отзывов">
-        <button type="button" class="filter active" data-filter="all" onclick="filterReviews('all', this)">Все отзывы</button>
-        <button type="button" class="filter" data-filter="individual" onclick="filterReviews('individual', this)">Индивидуальные</button>
-        <button type="button" class="filter" data-filter="couple" onclick="filterReviews('couple', this)">Парные</button>
-        <button type="button" class="filter" data-filter="group" onclick="filterReviews('group', this)">Групповые</button>
+        <button type="button" class="filter active" data-filter="all" aria-pressed="true" onclick="filterReviews('all', this)">Все отзывы</button>
+        <button type="button" class="filter" data-filter="individual" aria-pressed="false" onclick="filterReviews('individual', this)">Индивидуальные</button>
+        <button type="button" class="filter" data-filter="couple" aria-pressed="false" onclick="filterReviews('couple', this)">Парные</button>
+        <button type="button" class="filter" data-filter="group" aria-pressed="false" onclick="filterReviews('group', this)">Групповые</button>
       </div>
     </div>
   </div>
@@ -239,29 +239,49 @@
 
 
 
+
+
+
 <script>
-function filterReviews(category, clickedButton) {
-  var cards = document.querySelectorAll('.card');
-  var buttons = document.querySelectorAll('.filter');
+(function () {
+  var validCategories = ['all', 'individual', 'couple', 'group'];
 
-  for (var i = 0; i < buttons.length; i++) {
-    buttons[i].classList.remove('active');
-  }
-  clickedButton.classList.add('active');
+  function applyFilter(category, updateUrl) {
+    if (validCategories.indexOf(category) === -1) category = 'all';
 
-  for (var j = 0; j < cards.length; j++) {
-    var shouldShow = category === 'all' || cards[j].getAttribute('data-category') === category;
-    cards[j].classList.toggle('is-hidden', !shouldShow);
-    cards[j].style.display = shouldShow ? '' : 'none';
+    var cards = document.querySelectorAll('.card[data-category]');
+    var buttons = document.querySelectorAll('.filter[data-filter]');
+
+    buttons.forEach(function (button) {
+      var active = button.getAttribute('data-filter') === category;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+
+    cards.forEach(function (card) {
+      var show = category === 'all' || card.getAttribute('data-category') === category;
+      card.style.display = show ? 'inline-block' : 'none';
+    });
+
+    if (updateUrl) {
+      var url = new URL(window.location.href);
+      if (category === 'all') url.searchParams.delete('category');
+      else url.searchParams.set('category', category);
+      window.history.replaceState({}, '', url);
+    }
   }
 
-  var grid = document.querySelector('.grid');
-  if (grid) {
-    grid.style.display = 'none';
-    void grid.offsetHeight;
-    grid.style.display = '';
-  }
-}
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.filter[data-filter]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        applyFilter(button.getAttribute('data-filter'), true);
+      });
+    });
+
+    var params = new URLSearchParams(window.location.search);
+    applyFilter(params.get('category') || 'all', false);
+  });
+})();
 </script>
 
 </body>
